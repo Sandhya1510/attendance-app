@@ -388,10 +388,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 void main() {
-  runApp(MaterialApp(
-    home: AttendanceScreen(),
-    debugShowCheckedModeBanner: false,
-  ));
+  runApp(
+    MaterialApp(home: AttendanceScreen(), debugShowCheckedModeBanner: false),
+  );
 }
 
 class AttendanceScreen extends StatefulWidget {
@@ -415,7 +414,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<DateTime> getMonthDays(int year, int month) {
     final firstDay = DateTime(year, month, 1);
     final lastDay = DateTime(year, month + 1, 0);
-    return List.generate(lastDay.day, (index) => DateTime(year, month, index + 1));
+    return List.generate(
+      lastDay.day,
+      (index) => DateTime(year, month, index + 1),
+    );
   }
 
   Map<String, String> attendanceData = {};
@@ -456,21 +458,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     for (var date in daysInMonth) {
       if (date.weekday != DateTime.saturday &&
           date.weekday != DateTime.sunday &&
-          !holidays.any((h) =>
-          h.year == date.year &&
-              h.month == date.month &&
-              h.day == date.day)) {
+          !holidays.any(
+            (h) =>
+                h.year == date.year &&
+                h.month == date.month &&
+                h.day == date.day,
+          )) {
         count++;
       }
     }
     return count;
   }
 
-  static const List<String> statusOptions = [
-    '', 'L', 'S', 'W', 'O', 'L1', 'L2', 'S1', 'S2', 'W1', 'W2'
-  ];
+  static List<String> get statusOptions => ['', 'L', 'S', 'W', 'O', 'L1', 'L2', 'S1', 'S2', 'W1', 'W2',];
 
-  Map<String, double> getLeaveSummary(String employee, List<DateTime> daysInMonth) {
+  Map<String, double> getLeaveSummary(
+    String employee,
+    List<DateTime> daysInMonth,
+  ) {
     double leaveDays = 0;
     double sickLeaveDays = 0;
     double workFromHomeDays = 0;
@@ -501,7 +506,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       'VacationLeave': leaveDays,
       'Sick Leave': sickLeaveDays,
       'Work From Home': workFromHomeDays,
-      'Other Leave Days': otherLeaveDays
+      'Other Leave Days': otherLeaveDays,
     };
   }
 
@@ -512,7 +517,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       String? status = attendanceData[key];
       if (status == 'L' || status == 'S' || status == 'W' || status == 'O') {
         totalLeaves += 1;
-      } else if (status == 'L1' || status == 'L2' || status == 'S1' || status == 'S2' || status == 'W1' || status == 'W2') {
+      } else if (status == 'L1' ||
+          status == 'L2' ||
+          status == 'S1' ||
+          status == 'S2' ||
+          status == 'W1' ||
+          status == 'W2') {
         totalLeaves += 0.5;
       }
     }
@@ -531,20 +541,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         isDense: true,
         isExpanded: true,
         underline: SizedBox(),
-        items: statusOptions
-            .map((status) => DropdownMenuItem(
-          value: status,
-          child: Text(status),
-        ))
-            .toList(),
-        onChanged: isDisabled
-            ? null
-            : (value) {
-          setState(() {
-            attendanceData[key] = value!;
-            saveAttendanceData();
-          });
-        },
+        items:
+            statusOptions
+                .map(
+                  (status) =>
+                      DropdownMenuItem(value: status, child: Text(status)),
+                )
+                .toList(),
+        onChanged:
+            isDisabled
+                ? null
+                : (value) {
+                  setState(() {
+                    attendanceData[key] = value!;
+                    saveAttendanceData();
+                  });
+                },
       ),
     );
   }
@@ -585,9 +597,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 SizedBox(width: 10),
                 DropdownButton<int>(
                   value: selectedYear,
-                  items: List.generate(5, (index) => DateTime.now().year - 2 + index)
-                      .map((year) => DropdownMenuItem(value: year, child: Text('$year')))
-                      .toList(),
+                  items:
+                      List.generate(
+                            5,
+                            (index) => DateTime.now().year - 2 + index,
+                          )
+                          .map(
+                            (year) => DropdownMenuItem(
+                              value: year,
+                              child: Text('$year'),
+                            ),
+                          )
+                          .toList(),
                   onChanged: (value) {
                     setState(() {
                       selectedYear = value!;
@@ -599,13 +620,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 SizedBox(width: 10),
                 DropdownButton<int>(
                   value: selectedMonth,
-                  items: List.generate(
-                    12,
+                  items:
+                      List.generate(
+                        12,
                         (index) => DropdownMenuItem(
-                      value: index + 1,
-                      child: Text(DateFormat('MMMM').format(DateTime(0, index + 1))),
-                    ),
-                  ).toList(),
+                          value: index + 1,
+                          child: Text(
+                            DateFormat('MMMM').format(DateTime(0, index + 1)),
+                          ),
+                        ),
+                      ).toList(),
                   onChanged: (value) {
                     setState(() {
                       selectedMonth = value!;
@@ -619,14 +643,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       isMonthlyListVisible = !isMonthlyListVisible;
                     });
                   },
-                  child: Text(isMonthlyListVisible ? "Hide Monthly List" : "Show Monthly List"),
+                  child: Text(
+                    isMonthlyListVisible
+                        ? "Hide Monthly List"
+                        : "Show Monthly List",
+                  ),
                 ),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text('Total Working Days: $totalWorkingDays', style: TextStyle(fontSize: 16)),
+            child: Text(
+              'Total Working Days: $totalWorkingDays',
+              style: TextStyle(fontSize: 16),
+            ),
           ),
           if (isMonthlyListVisible)
             Padding(
@@ -640,19 +671,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   DataColumn(label: Text('Other')),
                   DataColumn(label: Text('Total')),
                 ],
-                rows: employees.map((employee) {
-                  final summary = getLeaveSummary(employee, daysInMonth);
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(employee)),
-                      DataCell(Text('${summary['VacationLeave']}')),
-                      DataCell(Text('${summary['Sick Leave']}')),
-                      DataCell(Text('${summary['Work From Home']}')),
-                      DataCell(Text('${summary['Other Leave Days']}')),
-                      DataCell(Text('${getTotalLeaves(employee, daysInMonth)}')),
-                    ],
-                  );
-                }).toList(),
+                rows:
+                    employees.map((employee) {
+                      final summary = getLeaveSummary(employee, daysInMonth);
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(employee)),
+                          DataCell(Text('${summary['VacationLeave']}')),
+                          DataCell(Text('${summary['Sick Leave']}')),
+                          DataCell(Text('${summary['Work From Home']}')),
+                          DataCell(Text('${summary['Other Leave Days']}')),
+                          DataCell(
+                            Text('${getTotalLeaves(employee, daysInMonth)}'),
+                          ),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
           Expanded(
@@ -666,36 +700,63 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   columns: [
                     DataColumn(label: Text('Employee')),
                     ...daysInMonth.map((date) {
-                      bool isWeekend = date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-                      bool isHoliday = holidays.any((h) =>
-                      h.year == date.year && h.month == date.month && h.day == date.day);
+                      bool isWeekend =
+                          date.weekday == DateTime.saturday ||
+                          date.weekday == DateTime.sunday;
+                      bool isHoliday = holidays.any(
+                        (h) =>
+                            h.year == date.year &&
+                            h.month == date.month &&
+                            h.day == date.day,
+                      );
+                      Color bgColor =
+                          isWeekend
+                              ? Colors.grey.shade300
+                              : isHoliday
+                              ? Colors.amber
+                              : Colors.white;
                       return DataColumn(
-                        label: Text(
-                          DateFormat('d').format(date),
-                          style: TextStyle(color: isWeekend ? Colors.red : Colors.black),
+                        label: Container(
+                          width: 35,
+                          color: bgColor,
+                          alignment: Alignment.center,
+                          child: Text(
+                            DateFormat('d').format(date),
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       );
                     }).toList(),
-                    DataColumn(label: Text('Total Leaves')),  // <-- added this
+                    DataColumn(label: Text('Total Leaves')), // <-- added this
                   ],
-                  rows: employees.map((employee) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(employee)),
-                        ...daysInMonth.map((date) {
-                          String key = '${employee}_${DateFormat('yyyy-MM-dd').format(date)}';
-                          bool isDisabled = date.weekday == DateTime.saturday ||
-                              date.weekday == DateTime.sunday ||
-                              holidays.any((h) =>
-                              h.year == date.year && h.month == date.month && h.day == date.day);
-                          return DataCell(buildStatusDropdown(key, isDisabled));
-                        }).toList(),
-                        DataCell(Text('${getTotalLeaves(employee, daysInMonth)}')),  // <-- added this
-                      ],
-                    );
-                  }).toList(),
+                  rows:
+                      employees.map((employee) {
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(employee)),
+                            ...daysInMonth.map((date) {
+                              String key =
+                                  '${employee}_${DateFormat('yyyy-MM-dd').format(date)}';
+                              bool isDisabled =
+                                  date.weekday == DateTime.saturday ||
+                                  date.weekday == DateTime.sunday ||
+                                  holidays.any(
+                                    (h) =>
+                                        h.year == date.year &&
+                                        h.month == date.month &&
+                                        h.day == date.day,
+                                  );
+                              return DataCell(
+                                buildStatusDropdown(key, isDisabled),
+                              );
+                            }).toList(),
+                            DataCell(
+                              Text('${getTotalLeaves(employee, daysInMonth)}'),
+                            ), // <-- added this
+                          ],
+                        );
+                      }).toList(),
                 ),
-
               ),
             ),
           ),
@@ -704,4 +765,3 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 }
-
