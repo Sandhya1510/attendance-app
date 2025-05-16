@@ -1258,6 +1258,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   // Leave Type Selectors
                   Column(
                     children:
+                        // Text("Select leave type"),
                         leaveTypes.map((type) {
                           bool isSelected = selectedLeaveTypes.containsKey(
                             type,
@@ -1338,6 +1339,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 ],
               ),
             ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => setState(() => showLeaveList = !showLeaveList),
               child: Text(

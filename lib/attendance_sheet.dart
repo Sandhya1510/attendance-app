@@ -1271,7 +1271,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   'Total Working Days: $totalWorkingDays',
@@ -1279,8 +1279,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 SizedBox(height: 4), // adds a small gap
                 Text(
-                  'Note: Click on the row to select the leave type.',
-                  style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.redAccent),
+                  'Note: Click on the cell to select the leave type.',
+                  style: TextStyle(fontSize: 20, fontStyle: FontStyle.italic, color: Colors.redAccent),
                 ),
               ],
             ),
