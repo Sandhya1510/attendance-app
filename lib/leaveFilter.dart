@@ -707,6 +707,162 @@
 //   }
 // }
 
+// @override
+// Widget build(BuildContext context) {
+//   final filteredRequests = leaveRequests.where(
+//         (req) =>
+//         req['employee']
+//             .toString()
+//             .toLowerCase()
+//             .contains(searchQuery.toLowerCase()),
+//   ).toList();
+//
+//   return Scaffold(
+//     appBar: AppBar(
+//       title: Text('Leave Request'),
+//       actions: [
+//         IconButton(icon: Icon(Icons.bar_chart), onPressed: showLeaveSummary),
+//       ],
+//     ),
+//     body: SingleChildScrollView(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Column(
+//         children: [
+//           Form(
+//             key: _formKey,
+//             child: Column(
+//               children: [
+//                 TextFormField(
+//                   decoration: InputDecoration(labelText: 'Employee Name'),
+//                   validator:
+//                       (value) =>
+//                           value == null || value.isEmpty
+//                               ? 'Enter name'
+//                               : null,
+//                   onSaved: (value) => employeeName = value!,
+//                 ),
+//                 SizedBox(height: 16),
+//                 ...leaveTypes.map((type) {
+//                   return Column(
+//                     children: [
+//                       CheckboxListTile(
+//                         title: Text(type),
+//                         value: selectedLeaveTypes.containsKey(type),
+//                         onChanged: (value) {
+//                           setState(() {
+//                             if (value!) {
+//                               selectedLeaveTypes[type] = {
+//                                 'from': null,
+//                                 'to': null,
+//                               };
+//                             } else {
+//                               selectedLeaveTypes.remove(type);
+//                             }
+//                           });
+//                         },
+//                       ),
+//                       if (selectedLeaveTypes.containsKey(type))
+//                         Column(
+//                           children: [
+//                             Row(
+//                               children: [
+//                                 Text('From: '),
+//                                 ElevatedButton(
+//                                   onPressed: () => pickDate(type, 'from'),
+//                                   child: Text(
+//                                     selectedLeaveTypes[type]!['from'] != null
+//                                         ? DateFormat('yyyy-MM-dd').format(
+//                                           selectedLeaveTypes[type]!['from']!,
+//                                         )
+//                                         : 'Select Date',
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                             SizedBox(height: 8),
+//                             Row(
+//                               children: [
+//                                 Text('To:     '),
+//                                 ElevatedButton(
+//                                   onPressed: () => pickDate(type, 'to'),
+//                                   child: Text(
+//                                     selectedLeaveTypes[type]!['to'] != null
+//                                         ? DateFormat('yyyy-MM-dd').format(
+//                                           selectedLeaveTypes[type]!['to']!,
+//                                         )
+//                                         : 'Select Date',
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                             SizedBox(height: 16),
+//                           ],
+//                         ),
+//                     ],
+//                   );
+//                 }).toList(),
+//                 SizedBox(height: 16),
+//                 ElevatedButton(
+//                   onPressed: submitRequest,
+//                   child: Text('Submit Leave Request'),
+//                 ),
+//                 SizedBox(height: 16),
+//                 ElevatedButton(
+//                   onPressed:
+//                       () => setState(() => showLeaveList = !showLeaveList),
+//                   child: Text(
+//                     showLeaveList
+//                         ? 'Hide Leave Requests'
+//                         : 'Show Leave Requests',
+//                   ),
+//                 ),
+//                 if (showLeaveList) ...[
+//                   SizedBox(height: 16),
+//                   TextFormField(
+//                     controller: searchController,
+//                     decoration: InputDecoration(
+//                       labelText: 'Search by Employee Name',
+//                       suffixIcon: IconButton(
+//                         icon: Icon(Icons.refresh),
+//                         onPressed: () {
+//                           setState(() {
+//                             searchQuery = '';
+//                             searchController.clear();
+//                           });
+//                         },
+//                       ),
+//                     ),
+//                     onChanged: (value) {
+//                       setState(() {
+//                         searchQuery = value;
+//                       });
+//                     },
+//                   ),
+//                   SizedBox(height: 16),
+//
+//                   if (filteredRequests.isEmpty)
+//                     Text('No leave requests found.')
+//                   else
+//                     Column(
+//                       children:
+//                           filteredRequests
+//                               .asMap()
+//                               .entries
+//                               .map(
+//                                 (entry) => buildLeaveRequestCard(entry.key),
+//                               )
+//                               .toList(),
+//                     ),
+//                 ],
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     ),
+//   );
+// }
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -727,11 +883,14 @@ class LeaveRequestScreen extends StatefulWidget {
 class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   String employeeName = '';
+  String employeeEmail= '';
   String searchQuery = '';
   Map<String, Map<String, DateTime?>> selectedLeaveTypes = {};
   List<Map<String, dynamic>> leaveRequests = [];
   bool isFormValid = false;
   bool showLeaveList = false;
+  DateTime? filterFromDate;
+  DateTime? filterToDate;
 
   List<String> leaveTypes = [
     'Sick Leave',
@@ -826,6 +985,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         leaveRequests.add({
           'employee': employeeName,
           'type': type,
+          'email': employeeEmail,
           'start_date': DateFormat('yyyy-MM-dd').format(dates['from']!),
           'end_date': DateFormat('yyyy-MM-dd').format(dates['to']!),
           'status': 'Pending',
@@ -880,11 +1040,48 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     print('EmailJS Response: ${response.statusCode}');
   }
 
-  void updateStatus(int index, String status) {
+  // void updateStatus(int index, String status) {
+  //   setState(() {
+  //     leaveRequests[index]['status'] = status;
+  //   });
+  //   saveLeaveRequests();
+  // }
+
+  void updateStatus(int index, String status) async {
     setState(() {
       leaveRequests[index]['status'] = status;
     });
-    saveLeaveRequests();
+    await saveLeaveRequests();
+
+    final employeeName = leaveRequests[index]['employee'];
+    final employeeEmail = leaveRequests[index]['email']; // assuming it's stored
+    await sendStatusEmailNotification(employeeName, employeeEmail, status);
+
+  }
+
+  Future<void> sendStatusEmailNotification(String name, String email, String status) async {
+    const serviceId = 'your_service_id';
+    const templateId = 'your_template_id';
+    const userId = 'your_user_id';
+
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'service_id': serviceId,
+        'template_id': templateId,
+        'user_id': userId,
+        'template_params': {
+          'employee_name': name,
+          'employee_email': email,
+          'leave_status': status,
+        },
+      }),
+    );
+
+    print('EmailJS Response: ${response.statusCode}');
   }
 
   Future<void> pickDate(String type, String whichDate) async {
@@ -1060,174 +1257,39 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     );
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   final filteredRequests = leaveRequests.where(
-  //         (req) =>
-  //         req['employee']
-  //             .toString()
-  //             .toLowerCase()
-  //             .contains(searchQuery.toLowerCase()),
-  //   ).toList();
-  //
-  //   return Scaffold(
-  //     appBar: AppBar(
-  //       title: Text('Leave Request'),
-  //       actions: [
-  //         IconButton(icon: Icon(Icons.bar_chart), onPressed: showLeaveSummary),
-  //       ],
-  //     ),
-  //     body: SingleChildScrollView(
-  //       padding: const EdgeInsets.all(16.0),
-  //       child: Column(
-  //         children: [
-  //           Form(
-  //             key: _formKey,
-  //             child: Column(
-  //               children: [
-  //                 TextFormField(
-  //                   decoration: InputDecoration(labelText: 'Employee Name'),
-  //                   validator:
-  //                       (value) =>
-  //                           value == null || value.isEmpty
-  //                               ? 'Enter name'
-  //                               : null,
-  //                   onSaved: (value) => employeeName = value!,
-  //                 ),
-  //                 SizedBox(height: 16),
-  //                 ...leaveTypes.map((type) {
-  //                   return Column(
-  //                     children: [
-  //                       CheckboxListTile(
-  //                         title: Text(type),
-  //                         value: selectedLeaveTypes.containsKey(type),
-  //                         onChanged: (value) {
-  //                           setState(() {
-  //                             if (value!) {
-  //                               selectedLeaveTypes[type] = {
-  //                                 'from': null,
-  //                                 'to': null,
-  //                               };
-  //                             } else {
-  //                               selectedLeaveTypes.remove(type);
-  //                             }
-  //                           });
-  //                         },
-  //                       ),
-  //                       if (selectedLeaveTypes.containsKey(type))
-  //                         Column(
-  //                           children: [
-  //                             Row(
-  //                               children: [
-  //                                 Text('From: '),
-  //                                 ElevatedButton(
-  //                                   onPressed: () => pickDate(type, 'from'),
-  //                                   child: Text(
-  //                                     selectedLeaveTypes[type]!['from'] != null
-  //                                         ? DateFormat('yyyy-MM-dd').format(
-  //                                           selectedLeaveTypes[type]!['from']!,
-  //                                         )
-  //                                         : 'Select Date',
-  //                                   ),
-  //                                 ),
-  //                               ],
-  //                             ),
-  //                             SizedBox(height: 8),
-  //                             Row(
-  //                               children: [
-  //                                 Text('To:     '),
-  //                                 ElevatedButton(
-  //                                   onPressed: () => pickDate(type, 'to'),
-  //                                   child: Text(
-  //                                     selectedLeaveTypes[type]!['to'] != null
-  //                                         ? DateFormat('yyyy-MM-dd').format(
-  //                                           selectedLeaveTypes[type]!['to']!,
-  //                                         )
-  //                                         : 'Select Date',
-  //                                   ),
-  //                                 ),
-  //                               ],
-  //                             ),
-  //                             SizedBox(height: 16),
-  //                           ],
-  //                         ),
-  //                     ],
-  //                   );
-  //                 }).toList(),
-  //                 SizedBox(height: 16),
-  //                 ElevatedButton(
-  //                   onPressed: submitRequest,
-  //                   child: Text('Submit Leave Request'),
-  //                 ),
-  //                 SizedBox(height: 16),
-  //                 ElevatedButton(
-  //                   onPressed:
-  //                       () => setState(() => showLeaveList = !showLeaveList),
-  //                   child: Text(
-  //                     showLeaveList
-  //                         ? 'Hide Leave Requests'
-  //                         : 'Show Leave Requests',
-  //                   ),
-  //                 ),
-  //                 if (showLeaveList) ...[
-  //                   SizedBox(height: 16),
-  //                   TextFormField(
-  //                     controller: searchController,
-  //                     decoration: InputDecoration(
-  //                       labelText: 'Search by Employee Name',
-  //                       suffixIcon: IconButton(
-  //                         icon: Icon(Icons.refresh),
-  //                         onPressed: () {
-  //                           setState(() {
-  //                             searchQuery = '';
-  //                             searchController.clear();
-  //                           });
-  //                         },
-  //                       ),
-  //                     ),
-  //                     onChanged: (value) {
-  //                       setState(() {
-  //                         searchQuery = value;
-  //                       });
-  //                     },
-  //                   ),
-  //                   SizedBox(height: 16),
-  //
-  //                   if (filteredRequests.isEmpty)
-  //                     Text('No leave requests found.')
-  //                   else
-  //                     Column(
-  //                       children:
-  //                           filteredRequests
-  //                               .asMap()
-  //                               .entries
-  //                               .map(
-  //                                 (entry) => buildLeaveRequestCard(entry.key),
-  //                               )
-  //                               .toList(),
-  //                     ),
-  //                 ],
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // ✅ Complete build() method continuation here:
-
   @override
   Widget build(BuildContext context) {
+    // final filteredRequests =
+    //     leaveRequests
+    //         .where(
+    //           (req) => req['employee'].toString().toLowerCase().contains(
+    //             searchQuery.toLowerCase(),
+    //           ),
+    //         )
+    //         .toList();
+
     final filteredRequests =
-        leaveRequests
-            .where(
-              (req) => req['employee'].toString().toLowerCase().contains(
-                searchQuery.toLowerCase(),
-              ),
-            )
-            .toList();
+        leaveRequests.where((req) {
+          final employeeMatches = req['employee']
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase());
+
+          final requestStartDate = DateTime.parse(req['start_date']);
+
+          final fromDateMatches =
+              filterFromDate == null ||
+              requestStartDate.isAfter(
+                filterFromDate!.subtract(const Duration(days: 1)),
+              );
+          final toDateMatches =
+              filterToDate == null ||
+              requestStartDate.isBefore(
+                filterToDate!.add(const Duration(days: 1)),
+              );
+
+          return employeeMatches && fromDateMatches && toDateMatches;
+        }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -1242,6 +1304,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           children: [
             Form(
               key: _formKey,
+              onChanged: validateForm,
               child: Column(
                 children: [
                   TextFormField(
@@ -1300,7 +1363,12 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                               Row(
                                 children: [
                                   TextButton(
-                                    onPressed: () => pickDate(type, 'from'),
+                                    // onPressed: () => pickDate(type, 'from'),
+                                    onPressed: () async {
+                                      await pickDate(type, 'from');
+                                      validateForm();
+                                    },
+
                                     child: Text(
                                       dates['from'] == null
                                           ? 'From Date'
@@ -1311,7 +1379,11 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   ),
                                   SizedBox(width: 20),
                                   TextButton(
-                                    onPressed: () => pickDate(type, 'to'),
+                                    // onPressed: () => pickDate(type, 'to'),
+                                    onPressed: () async {
+                                      await pickDate(type, 'to');
+                                      validateForm();
+                                    },
                                     child: Text(
                                       dates['to'] == null
                                           ? 'To Date'
@@ -1322,23 +1394,25 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                   ),
                                 ],
                               ),
+
                               SizedBox(height: 10),
                             ],
                           );
                         }).toList(),
                   ),
                   SizedBox(height: 20),
-                  // ElevatedButton(
-                  //   onPressed: isFormValid ? submitRequest : null,
-                  //   child: Text('Submit Leave Request'),
-                  // ),
                   ElevatedButton(
-                    onPressed: submitRequest,
+                    onPressed: isFormValid ? submitRequest : null,
                     child: Text('Submit Leave Request'),
                   ),
+                  // ElevatedButton(
+                  //   onPressed: submitRequest,
+                  //   child: Text('Submit Leave Request'),
+                  // ),
                 ],
               ),
             ),
+
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => setState(() => showLeaveList = !showLeaveList),
@@ -1369,6 +1443,65 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 },
               ),
               SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2024),
+                          lastDate: DateTime(2026),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            filterFromDate = picked;
+                          });
+                        }
+                      },
+                      child: Text(
+                        filterFromDate == null
+                            ? 'From Date'
+                            : 'From: ${DateFormat('yyyy-MM-dd').format(filterFromDate!)}',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2024),
+                          lastDate: DateTime(2026),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            filterToDate = picked;
+                          });
+                        }
+                      },
+                      child: Text(
+                        filterToDate == null
+                            ? 'To Date'
+                            : 'To: ${DateFormat('yyyy-MM-dd').format(filterToDate!)}',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.clear),
+                    onPressed: () {
+                      setState(() {
+                        filterFromDate = null;
+                        filterToDate = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
               // Leave Requests List
               ListView.builder(
                 shrinkWrap: true,
@@ -1388,3 +1521,4 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     );
   }
 }
+
